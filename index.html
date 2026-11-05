@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Antiparalisia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: uma coluna calma. Hero com um único botão, depois datas, depois o quadro por categoria. */
+:root {
+  --bg: #f5f4fa;
+  --surface: #ffffff;
+  --ink: #2a2940;
+  --ink-soft: #66647e;
+  --line: #e4e1ef;
+  --accent: #4d5ec7;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6e9fb;
+  --urgent: #e0707f;
+  --week: #e3a93f;
+  --free: #5db88b;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(42, 41, 64, .05), 0 6px 20px rgba(42, 41, 64, .05);
+  --font: 'Lexend', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171f; --surface: #21212c; --ink: #ececf5; --ink-soft: #a5a3bb; --line: #33334a;
+    --accent: #a3b0ff; --accent-ink: #17171f; --accent-soft: #2b2f52;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17171f; --surface: #21212c; --ink: #ececf5; --ink-soft: #a5a3bb; --line: #33334a;
+  --accent: #a3b0ff; --accent-ink: #17171f; --accent-soft: #2b2f52;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.55; font-weight: 400;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 500; text-wrap: balance; }
+ul { list-style: none; margin: 0; padding: 0; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+[hidden] { display: none !important; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+
+/* Topo */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 20px 0 8px; }
+.brand { font-size: 1rem; font-weight: 500; }
+.today { color: var(--ink-soft); font-size: .875rem; }
+.count {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); font-size: .875rem; color: var(--ink-soft);
+}
+.count b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Hero */
+.hero {
+  margin-top: 12px; padding: clamp(22px, 4vw, 36px); border-radius: 24px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
+  display: grid; gap: 20px;
+}
+.hero h2 { font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.25; }
+.hero p.lead { color: var(--ink-soft); max-width: 52ch; margin-top: 6px; }
+.cta {
+  border: 0; border-radius: 18px; background: var(--accent); color: var(--accent-ink);
+  min-height: 72px; padding: 16px 32px; font-size: 1.3rem; font-weight: 500; width: 100%;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.cta:hover { transform: translateY(-1px); }
+.cta.sm { min-height: 56px; font-size: 1.1rem; width: auto; padding: 12px 28px; border-radius: 14px; }
+.mantra { font-size: .9375rem; color: var(--ink-soft); }
+.mantra::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--free); margin-right: 8px; }
+@media (min-width: 760px) { .cta { width: auto; min-width: 340px; justify-self: start; } }
+
+/* Seções */
+section.block { margin-top: 36px; }
+.block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.block-head h2 { font-size: 1.125rem; }
+.sub { color: var(--ink-soft); font-size: .875rem; }
+.link { background: none; border: 0; padding: 4px 0; color: var(--accent); font-size: .9375rem; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Contagem regressiva */
+.countdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.cd {
+  background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--k);
+  border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; box-shadow: var(--shadow);
+}
+.cd-num { font-size: 1.9rem; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cd-num small { font-size: .875rem; font-weight: 400; color: var(--ink-soft); margin-left: 6px; }
+.cd-title { font-weight: 500; }
+.cd-meta { font-size: .8125rem; color: var(--ink-soft); }
+.empty { color: var(--ink-soft); font-size: .9375rem; padding: 8px 0; }
+@media (max-width: 720px) { .countdown { grid-template-columns: 1fr; } }
+
+/* Filtros */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px;
+  font-size: .875rem;
+}
+.chip-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.chip-btn span { color: var(--ink-soft); margin-left: 4px; font-variant-numeric: tabular-nums; }
+
+/* Categorias */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr)); gap: 16px; }
+.card {
+  --cd: #999;
+  background: color-mix(in srgb, var(--cd) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cd) 38%, var(--line));
+  border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.card-head { display: flex; align-items: center; gap: 10px; }
+.card-head h3 { font-size: 1rem; flex: 1; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--cd); flex: none; }
+.badge { font-size: .8125rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.card ul { display: grid; gap: 8px; }
+.task {
+  display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 10px 8px;
+}
+.check {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ink-soft); background: transparent;
+  margin-top: 2px; padding: 0; display: grid; place-items: center; transition: background .15s, border-color .15s;
+}
+.check:hover { background: color-mix(in srgb, var(--free) 35%, transparent); border-color: var(--free); }
+.check.on { background: var(--free); border-color: var(--free); }
+.check.on::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.task-main { text-align: left; background: none; border: 0; padding: 0; display: grid; gap: 3px; min-width: 0; }
+.task-title { overflow-wrap: anywhere; }
+.task-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: .75rem; color: var(--ink-soft); }
+.meta { background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 6px; padding: 0 6px; }
+.meta.late { background: color-mix(in srgb, var(--urgent) 22%, transparent); color: var(--ink); }
+.pill {
+  --u: var(--free);
+  border: 1px solid color-mix(in srgb, var(--u) 50%, transparent); background: color-mix(in srgb, var(--u) 22%, var(--surface));
+  color: var(--ink); border-radius: 999px; padding: 1px 10px; font-size: .75rem; white-space: nowrap; margin-top: 2px;
+}
+.u-urgent { --u: var(--urgent); } .u-week { --u: var(--week); } .u-free { --u: var(--free); }
+.more { align-self: flex-start; }
+.add { display: flex; gap: 6px; }
+.add input[type="text"] { flex: 1; min-width: 0; }
+.field, .add input, .add select {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 8px 10px; width: 100%;
+}
+.add select { width: auto; padding: 8px 6px; }
+.add button {
+  border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 10px; width: 40px; font-size: 1.25rem; flex: none;
+}
+.nothing { color: var(--ink-soft); font-size: .875rem; }
+
+/* Datas */
+.dates { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .dates { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; box-shadow: var(--shadow); }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-head strong { font-weight: 500; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; width: 36px; height: 36px; font-size: 1.1rem; line-height: 1; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal .dow { text-align: center; font-size: .75rem; color: var(--ink-soft); padding: 2px 0; }
+.day {
+  aspect-ratio: 1 / 1; border: 1px solid transparent; background: transparent; border-radius: 10px; padding: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: .875rem;
+  font-variant-numeric: tabular-nums;
+}
+.day:hover { background: var(--accent-soft); }
+.day.today { border-color: var(--accent); font-weight: 600; }
+.day.sel { background: var(--accent-soft); }
+.day .dots { display: flex; gap: 2px; height: 6px; }
+.day .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--k); display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: .75rem; color: var(--ink-soft); }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--k); margin-right: 5px; }
+.dt-form { display: grid; gap: 10px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+label { font-size: .8125rem; color: var(--ink-soft); display: block; margin-bottom: 4px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .row2 { grid-template-columns: 1fr; } }
+.primary {
+  border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 12px; padding: 10px 18px; font-weight: 500;
+}
+.ghost { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 16px; }
+.danger { border: 1px solid color-mix(in srgb, var(--urgent) 55%, transparent); background: transparent; border-radius: 12px; padding: 10px 16px; }
+.date-list { display: grid; gap: 8px; }
+.date-item {
+  display: grid; grid-template-columns: 64px 1fr auto 32px; gap: 10px; align-items: center;
+  border-left: 5px solid var(--k); background: var(--surface-2, color-mix(in srgb, var(--ink) 3%, var(--surface)));
+  border-radius: 10px; padding: 8px 8px 8px 12px;
+}
+.date-item.past { opacity: .6; }
+.date-when { display: grid; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.date-when span, .date-what small { font-size: .75rem; color: var(--ink-soft); }
+.date-what { display: grid; min-width: 0; overflow-wrap: anywhere; }
+.date-left { font-size: .8125rem; color: var(--ink-soft); white-space: nowrap; }
+.x { border: 0; background: none; color: var(--ink-soft); font-size: 1.2rem; width: 32px; height: 32px; border-radius: 8px; }
+.x:hover { background: color-mix(in srgb, var(--urgent) 18%, transparent); }
+@media (max-width: 480px) { .date-item { grid-template-columns: 56px 1fr 32px; } .date-left { display: none; } }
+
+/* Concluídas */
+.done-list { display: grid; gap: 6px; margin-top: 12px; }
+.done-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: var(--ink-soft); }
+.done-item .t { flex: 1; text-decoration: line-through; overflow-wrap: anywhere; }
+
+footer { margin: 44px 0 32px; color: var(--ink-soft); font-size: .8125rem; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+
+/* Modo foco */
+#focus { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow: auto; display: flex; justify-content: center; padding: clamp(16px, 5vw, 48px); }
+.focus-inner { width: min(640px, 100%); margin: auto 0; display: grid; gap: 22px; }
+.focus-inner h2 { font-size: clamp(1.6rem, 5.5vw, 2.4rem); line-height: 1.2; outline: none; overflow-wrap: anywhere; }
+.focus-label { font-size: .875rem; color: var(--ink-soft); letter-spacing: .02em; }
+.focus-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cat-chip { --cd: #999; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 3px 12px 3px 8px; font-size: .875rem; background: color-mix(in srgb, var(--cd) 22%, var(--surface)); border: 1px solid color-mix(in srgb, var(--cd) 45%, var(--line)); }
+.due-chip { font-size: .875rem; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; background: var(--surface); }
+.due-chip.late { color: var(--ink); background: color-mix(in srgb, var(--urgent) 22%, var(--surface)); }
+.step-card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: clamp(18px, 4vw, 28px); display: grid; gap: 14px; box-shadow: var(--shadow); }
+.step-label { font-size: .875rem; color: var(--ink-soft); }
+.step-text { font-size: clamp(1.2rem, 3.5vw, 1.5rem); line-height: 1.35; }
+.step-progress { font-size: .8125rem; color: var(--ink-soft); }
+.focus-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.timer-num { font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; margin-right: 10px; }
+.timer-done { font-size: .875rem; color: var(--ink-soft); margin-bottom: 6px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 8px; }
+.focus-foot { display: flex; gap: 10px 18px; flex-wrap: wrap; }
+
+/* Janelas */
+dialog {
+  border: 0; border-radius: 22px; background: var(--surface); color: var(--ink); padding: 0;
+  width: min(560px, calc(100% - 32px)); max-height: 90dvh; box-shadow: 0 20px 60px rgba(20, 18, 40, .35);
+}
+dialog::backdrop { background: rgba(30, 28, 50, .45); }
+.dlg { padding: 20px; display: grid; gap: 14px; }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; }
+.dlg-head h2 { font-size: 1.125rem; }
+.urg-set { border: 0; padding: 0; margin: 0; }
+.urg-set legend { font-size: .8125rem; color: var(--ink-soft); padding: 0; margin-bottom: 4px; }
+.urg-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.urg-row label { margin: 0; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: .875rem; cursor: pointer; }
+.urg-row label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+.urg-row input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.urg-row label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.steps { display: grid; gap: 6px; }
+.step { display: grid; grid-template-columns: 28px 1fr 32px; align-items: center; gap: 6px; background: color-mix(in srgb, var(--ink) 4%, var(--surface)); border-radius: 10px; padding: 6px 4px 6px 8px; }
+.step.on span { text-decoration: line-through; color: var(--ink-soft); }
+.step-add { display: flex; gap: 8px; }
+.dlg-actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+textarea.field { min-height: 140px; resize: vertical; font-size: .75rem; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* Toast e confete */
+#toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 16px); opacity: 0; z-index: 100; pointer-events: none;
+  background: var(--ink); color: var(--bg); padding: 12px 20px; border-radius: 999px; max-width: calc(100% - 32px); text-align: center;
+  transition: opacity .25s ease, transform .25s ease;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#fx { position: fixed; inset: 0; pointer-events: none; z-index: 99; overflow: hidden; }
+#fx span { position: absolute; left: 50%; bottom: 70px; width: 10px; height: 10px; border-radius: 50%; animation: pop 1.1s ease-out forwards; }
+@keyframes pop { from { transform: translate(0, 0) scale(1); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .cta:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <div class="brand">Painel Antiparalisia</div>
+        <div class="today" id="todayLabel"></div>
+      </div>
+      <div class="count" title="Micro-passos e tarefas concluídos hoje">Conquistas de hoje <b id="doneCount">0</b></div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="heroTitle">
+        <div>
+          <h2 id="heroTitle">Um passo de cada vez.</h2>
+          <p class="lead">Você não precisa decidir nada. Eu escolho uma tarefa, mostro só ela e escondo o resto.</p>
+        </div>
+        <button class="cta" data-action="start-focus">O que fazer agora?</button>
+        <p class="mantra">O objetivo é fazer imperfeito, mas feito.</p>
+      </section>
+
+      <section class="block" aria-labelledby="cdTitle">
+        <div class="block-head">
+          <h2 id="cdTitle">Próximas datas</h2>
+          <button class="link" data-action="goto-datas">Ver calendário</button>
+        </div>
+        <div class="countdown" id="countdown"></div>
+      </section>
+
+      <section class="block" aria-labelledby="boardTitle">
+        <div class="block-head">
+          <h2 id="boardTitle">Minhas demandas</h2>
+          <div class="filters" id="filters" role="group" aria-label="Filtrar por urgência"></div>
+        </div>
+        <div class="grid" id="board"></div>
+      </section>
+
+      <section class="block" id="datas" aria-labelledby="datasTitle">
+        <div class="block-head">
+          <h2 id="datasTitle">Datas importantes</h2>
+          <span class="sub">Relatórios CNPq/PI, provas e submissões GENTHES</span>
+        </div>
+        <div class="dates" id="datesWrap"></div>
+      </section>
+
+      <section class="block" aria-labelledby="doneTitle">
+        <div class="block-head">
+          <h2 id="doneTitle">Já concluídas</h2>
+          <button class="link" data-action="toggle-done" id="doneToggle"></button>
+        </div>
+        <div id="doneBox"></div>
+      </section>
+    </main>
+
+    <footer>
+      <span id="storeNote">Suas anotações ficam salvas só neste navegador.</span>
+      <button class="link" data-action="open-backup">Backup e restaurar</button>
+      <button class="link" data-action="clear-examples" id="clearEx" hidden>Remover exemplos</button>
+    </footer>
+  </div>
+</div>
+
+<div id="focus" hidden></div>
+<dialog id="taskDlg" aria-label="Detalhes da tarefa"></dialog>
+<dialog id="backupDlg" aria-label="Backup"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="fx" aria-hidden="true"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Dados fixos ---------- */
+  var KEY = 'painel-antiparalisia-v1';
+  var CATS = [
+    { id: 'faculdade', name: 'Faculdade', hint: 'disciplinas, trabalhos, provas', dot: '#7ea6f2' },
+    { id: 'estagio', name: 'Estágio', hint: '', dot: '#6fcaa0' },
+    { id: 'cnpq', name: 'Bolsa CNPq', hint: '', dot: '#f2b377' },
+    { id: 'pi', name: 'Iniciação Científica (PI)', hint: '', dot: '#a98ee8' },
+    { id: 'genthes', name: 'Artigos GENTHES', hint: '', dot: '#ef8fa5' },
+    { id: 'jovens', name: 'Grupo de Jovens', hint: '', dot: '#e8c653' },
+    { id: 'musica', name: 'Grupo de Música', hint: '', dot: '#5cc4c8' },
+    { id: 'prazos', name: 'Datas e Prazos Críticos', hint: '', dot: '#a3c05f' }
+  ];
+  var URG = {
+    urgent: { rank: 0, label: 'Urgente', short: 'Urgente', emoji: '🔴' },
+    week: { rank: 1, label: 'Esta semana', short: 'Semana', emoji: '🟡' },
+    free: { rank: 2, label: 'No meu ritmo', short: 'Ritmo', emoji: '🟢' }
+  };
+  var URG_BY_RANK = ['urgent', 'week', 'free'];
+  var KINDS = {
+    cnpq: { label: 'Relatório CNPq', color: '#f2b377' },
+    pi: { label: 'Relatório PI', color: '#a98ee8' },
+    prova: { label: 'Prova', color: '#7ea6f2' },
+    genthes: { label: 'Submissão GENTHES', color: '#ef8fa5' },
+    outro: { label: 'Outro prazo', color: '#a3c05f' }
+  };
+  var MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var MON_S = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var DOW_L = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  var DOW_S = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  var MSG_STEP = ['Passo feito. Isso é começar.', 'Boa! Um pedacinho a menos.', 'Imperfeito e feito. Perfeito.', 'Mais um. Sem pressa.', 'Você mexeu o ponteiro.'];
+  var MSG_TASK = ['Tarefa concluída. Pode respirar.', 'Feito! Uma a menos na cabeça.', 'Concluída. Que tal uma pausa curta?', 'Você fez. Isso conta muito.'];
+  var SUGGEST = ['Abrir o arquivo e escrever só o título', 'Juntar o material numa pasta', 'Ler só o primeiro parágrafo', 'Listar 3 tópicos soltos'];
+
+  /* ---------- Utilitários ---------- */
+  var $ = function (s) { return document.querySelector(s); };
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var uid = function () { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var toISO = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  var parseISO = function (s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+  var todayStart = function () { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+  var daysUntil = function (s) { return Math.round((parseISO(s) - todayStart()) / 864e5); };
+  var fmtShort = function (s) { var d = parseISO(s); return d.getDate() + ' ' + MON_S[d.getMonth()]; };
+  var fmtFull = function (s) { var d = parseISO(s); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); };
+  var dowOf = function (s) { return DOW_L[parseISO(s).getDay()]; };
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function whenLabel(days) {
+    if (days < -1) return 'atrasada há ' + (-days) + ' dias';
+    if (days === -1) return 'atrasada desde ontem';
+    if (days === 0) return 'hoje';
+    if (days === 1) return 'amanhã';
+    return 'em ' + days + ' dias';
+  }
+  function catOf(id) { return CATS.filter(function (c) { return c.id === id; })[0] || CATS[0]; }
+
+  /* ---------- Estado e persistência ---------- */
+  var storageOk = true;
+  function load() {
+    try { var raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); }
+    catch (e) { storageOk = false; }
+    return null;
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { storageOk = false; }
+  }
+  function seed() {
+    var d = function (n) { var x = todayStart(); x.setDate(x.getDate() + n); return toISO(x); };
+    var mk = function (title, cat, urg, due, steps) {
+      return { id: uid(), title: title, cat: cat, urg: urg, due: due || '', done: false, created: Date.now(), example: true,
+        steps: (steps || []).map(function (s) { return { id: uid(), text: s, done: false }; }) };
+    };
+    var dt = function (title, kind, n) { return { id: uid(), title: title, kind: kind, date: d(n), example: true }; };
+    return {
+      v: 1,
+      tasks: [
+        mk('Revisar anotações para a prova', 'faculdade', 'week', d(4), ['Separar o caderno da disciplina', 'Ler só o primeiro tópico']),
+        mk('Enviar o resumo semanal ao supervisor', 'estagio', 'urgent', d(1), []),
+        mk('Preencher o relatório parcial da bolsa', 'cnpq', 'week', d(9), ['Abrir o modelo do relatório']),
+        mk('Escrever a seção de metodologia', 'pi', 'free', '', []),
+        mk('Escrever o artigo GENTHES', 'genthes', 'free', '', ['Abrir o documento e escrever o título']),
+        mk('Preparar a reflexão do encontro', 'jovens', 'week', d(5), []),
+        mk('Escolher o repertório do próximo ensaio', 'musica', 'free', '', [])
+      ],
+      dates: [
+        dt('Prova (exemplo)', 'prova', 6),
+        dt('Relatório CNPq (exemplo)', 'cnpq', 13),
+        dt('Submissão GENTHES (exemplo)', 'genthes', 21),
+        dt('Relatório PI (exemplo)', 'pi', 28)
+      ],
+      events: []
+    };
+  }
+
+  var state = load();
+  if (!state || !Array.isArray(state.tasks)) { state = seed(); save(); }
+  state.dates = state.dates || [];
+  state.events = (state.events || []).filter(function (e) { return (Date.now() - parseISO(e.day).getTime()) < 90 * 864e5; });
+
+  var now0 = new Date();
+  var ui = { filter: 'all', expanded: {}, dlgTask: null, cal: { y: now0.getFullYear(), m: now0.getMonth() }, dt: { title: '', kind: 'prova', date: '' }, delArmed: null, restoreArmed: false, showDone: false };
+  var focus = { open: false, mode: 'task', id: null, skipped: [], interval: null, end: 0, scrollY: 0 };
+
+  var getTask = function (id) { return state.tasks.filter(function (t) { return t.id === id; })[0]; };
+
+  /* ---------- Urgência e ordenação ---------- */
+  function baseRank(t) { return URG[t.urg] ? URG[t.urg].rank : 2; }
+  function effRank(t) {
+    var r = baseRank(t);
+    if (t.due) { var d = daysUntil(t.due); if (d <= 1) r = 0; else if (d <= 7) r = Math.min(r, 1); }
+    return r;
+  }
+  var effKey = function (t) { return URG_BY_RANK[effRank(t)]; };
+  function cmpTasks(a, b) {
+    var da = a.due ? daysUntil(a.due) : 9999, db = b.due ? daysUntil(b.due) : 9999;
+    var sa = a.steps.some(function (s) { return s.done; }) ? 1 : 0, sb = b.steps.some(function (s) { return s.done; }) ? 1 : 0;
+    return (effRank(a) - effRank(b)) || (da - db) || (sb - sa) || (a.created - b.created);
+  }
+
+  /* ---------- Ações sobre dados ---------- */
+  function setStep(taskId, stepId, done) {
+    var t = getTask(taskId); var s = t && t.steps.filter(function (x) { return x.id === stepId; })[0];
+    if (!s || s.done === done) return false;
+    s.done = done;
+    if (done) state.events.push({ id: uid(), day: toISO(new Date()), kind: 'step', ref: stepId });
+    else state.events = state.events.filter(function (e) { return e.ref !== stepId; });
+    return true;
+  }
+  function setTaskDone(id, done) {
+    var t = getTask(id); if (!t || t.done === done) return false;
+    t.done = done; t.doneAt = done ? Date.now() : null;
+    if (done) state.events.push({ id: uid(), day: toISO(new Date()), kind: 'task', ref: id });
+    else state.events = state.events.filter(function (e) { return e.ref !== id; });
+    return true;
+  }
+  function todayCount() { var d = toISO(new Date()); return state.events.filter(function (e) { return e.day === d; }).length; }
+  function commit() { save(); render(); }
+
+  /* ---------- Celebração ---------- */
+  var toastTimer;
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
+  }
+  function celebrate(kind) {
+    var list = kind === 'task' ? MSG_TASK : MSG_STEP;
+    toast(list[Math.floor(Math.random() * list.length)]);
+    if (reduce) return;
+    var fx = $('#fx');
+    for (var i = 0; i < 16; i++) {
+      var s = document.createElement('span');
+      var a = Math.PI + Math.random() * Math.PI, dist = 90 + Math.random() * 140;
+      s.style.setProperty('--dx', Math.round(Math.cos(a) * dist) + 'px');
+      s.style.setProperty('--dy', Math.round(Math.sin(a) * dist) + 'px');
+      s.style.background = CATS[i % CATS.length].dot;
+      fx.appendChild(s);
+    }
+    setTimeout(function () { fx.innerHTML = ''; }, 1250);
+  }
+
+  /* ---------- Renderização do painel ---------- */
+  function renderHeader() {
+    var n = new Date();
+    $('#todayLabel').textContent = DOW_L[n.getDay()].charAt(0).toUpperCase() + DOW_L[n.getDay()].slice(1) + ', ' + n.getDate() + ' de ' + MONTHS[n.getMonth()];
+    $('#doneCount').textContent = todayCount();
+  }
+
+  function upcomingDates() {
+    return state.dates.filter(function (x) { return daysUntil(x.date) >= 0; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+
+  function renderCountdown() {
+    var up = upcomingDates().slice(0, 3);
+    if (!up.length) { $('#countdown').innerHTML = '<p class="empty" style="grid-column:1/-1">Nenhuma data próxima. Adicione uma no calendário abaixo.</p>'; return; }
+    $('#countdown').innerHTML = up.map(function (x) {
+      var d = daysUntil(x.date), k = KINDS[x.kind] || KINDS.outro;
+      var big = d === 0 ? 'Hoje' : d === 1 ? 'Amanhã' : d + '<small>dias</small>';
+      return '<div class="cd" style="--k:' + k.color + '"><div class="cd-num">' + big + '</div><div class="cd-title">' + esc(x.title) +
+        '</div><div class="cd-meta">' + esc(k.label) + ' · ' + dowOf(x.date) + ', ' + fmtShort(x.date) + '</div></div>';
+    }).join('');
+  }
+
+  function pillHtml(t, interactive) {
+    var k = effKey(t), u = URG[k], forced = effRank(t) < baseRank(t);
+    var label = u.emoji + ' ' + u.short;
+    if (interactive && !forced) return '<button class="pill u-' + k + '" data-action="cycle-urg" data-id="' + t.id + '" title="Mudar urgência (' + u.label + ')">' + label + '</button>';
+    return '<span class="pill u-' + k + '"' + (forced ? ' title="Definida pelo prazo"' : '') + '>' + label + '</span>';
+  }
+
+  function taskRow(t) {
+    var meta = '';
+    if (t.due) { var d = daysUntil(t.due); meta += '<span class="meta' + (d < 0 ? ' late' : '') + '">' + whenLabel(d) + '</span>'; }
+    if (t.steps.length) meta += '<span class="meta">' + t.steps.filter(function (s) { return s.done; }).length + '/' + t.steps.length + ' passos</span>';
+    if (t.example) meta += '<span class="meta">exemplo</span>';
+    return '<li class="task"><button class="check" data-action="toggle-task" data-id="' + t.id + '" aria-label="Concluir: ' + esc(t.title) + '"></button>' +
+      '<button class="task-main" data-action="open-task" data-id="' + t.id + '"><span class="task-title">' + esc(t.title) + '</span>' +
+      (meta ? '<span class="task-meta">' + meta + '</span>' : '') + '</button>' + pillHtml(t, true) + '</li>';
+  }
+
+  function renderBoard() {
+    var open = state.tasks.filter(function (t) { return !t.done; });
+    var counts = { all: open.length, urgent: 0, week: 0, free: 0 };
+    open.forEach(function (t) { counts[effKey(t)]++; });
+    var chips = [['all', 'Todas'], ['urgent', '🔴 Urgente'], ['week', '🟡 Esta semana'], ['free', '🟢 No meu ritmo']];
+    $('#filters').innerHTML = chips.map(function (c) {
+      return '<button class="chip-btn" data-action="filter" data-value="' + c[0] + '" aria-pressed="' + (ui.filter === c[0]) + '">' + c[1] + '<span>' + counts[c[0]] + '</span></button>';
+    }).join('');
+
+    var f = ui.filter, html = '';
+    CATS.forEach(function (c) {
+      var list = open.filter(function (t) { return t.cat === c.id && (f === 'all' || effKey(t) === f); }).sort(cmpTasks);
+      if (f !== 'all' && !list.length) return;
+      var shown = ui.expanded[c.id] ? list : list.slice(0, 4), extra = list.length - shown.length;
+      html += '<article class="card" style="--cd:' + c.dot + '"><div class="card-head"><span class="dot"></span><h3>' + esc(c.name) + '</h3><span class="badge">' + list.length + (list.length === 1 ? ' aberta' : ' abertas') + '</span></div>';
+      html += list.length ? '<ul>' + shown.map(taskRow).join('') + '</ul>' : '<p class="nothing">Nada por aqui. Bom sinal.</p>';
+      if (extra > 0) html += '<button class="link more" data-action="expand" data-id="' + c.id + '">Mostrar mais ' + extra + '</button>';
+      else if (ui.expanded[c.id] && list.length > 4) html += '<button class="link more" data-action="expand" data-id="' + c.id + '">Mostrar menos</button>';
+      html += '<form class="add" data-form="add-task" data-cat="' + c.id + '"><input type="text" id="add-' + c.id + '" placeholder="Nova tarefa…" aria-label="Nova tarefa em ' + esc(c.name) + '" autocomplete="off">' +
+        '<select aria-label="Urgência" id="addu-' + c.id + '"><option value="free">🟢 Ritmo</option><option value="week">🟡 Semana</option><option value="urgent">🔴 Urgente</option></select>' +
+        '<button type="submit" aria-label="Adicionar tarefa">+</button></form></article>';
+    });
+    $('#board').innerHTML = html || '<p class="empty">Nenhuma tarefa nessa faixa de urgência.</p>';
+  }
+
+  function renderDatas() {
+    var y = ui.cal.y, m = ui.cal.m;
+    var first = new Date(y, m, 1), startDow = first.getDay(), dim = new Date(y, m + 1, 0).getDate();
+    var byDay = {};
+    state.dates.forEach(function (x) { (byDay[x.date] = byDay[x.date] || []).push(x); });
+    var tIso = toISO(new Date());
+    var cells = DOW_S.map(function (d) { return '<div class="dow" aria-hidden="true">' + d + '</div>'; }).join('');
+    for (var i = 0; i < startDow; i++) cells += '<div></div>';
+    for (var day = 1; day <= dim; day++) {
+      var iso = y + '-' + pad(m + 1) + '-' + pad(day), items = byDay[iso] || [];
+      var dots = items.slice(0, 3).map(function (x) { return '<i style="--k:' + (KINDS[x.kind] || KINDS.outro).color + '"></i>'; }).join('');
+      var lab = day + ' de ' + MONTHS[m] + (items.length ? ': ' + items.map(function (x) { return x.title; }).join(', ') : '');
+      cells += '<button class="day' + (iso === tIso ? ' today' : '') + (ui.dt.date === iso ? ' sel' : '') + '" data-action="cal-pick" data-date="' + iso + '" aria-label="' + esc(lab) + '">' + day + '<span class="dots">' + dots + '</span></button>';
+    }
+    var legend = Object.keys(KINDS).map(function (k) { return '<span><i style="--k:' + KINDS[k].color + '"></i>' + KINDS[k].label + '</span>'; }).join('');
+    var cal = '<div class="panel"><div class="cal-head"><button class="icon-btn" data-action="cal-prev" aria-label="Mês anterior">‹</button><strong>' + MONTHS[m].charAt(0).toUpperCase() + MONTHS[m].slice(1) + ' de ' + y +
+      '</strong><button class="icon-btn" data-action="cal-next" aria-label="Próximo mês">›</button></div><div class="cal">' + cells + '</div><div class="legend">' + legend + '</div></div>';
+
+    var kindOpts = Object.keys(KINDS).map(function (k) { return '<option value="' + k + '"' + (ui.dt.kind === k ? ' selected' : '') + '>' + KINDS[k].label + '</option>'; }).join('');
+    var up = upcomingDates(), past = state.dates.filter(function (x) { return daysUntil(x.date) < 0; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var li = function (x, isPast) {
+      var d = daysUntil(x.date), k = KINDS[x.kind] || KINDS.outro;
+      return '<li class="date-item' + (isPast ? ' past' : '') + '" style="--k:' + k.color + '"><div class="date-when"><strong>' + fmtShort(x.date) + '</strong><span>' + dowOf(x.date) + '</span></div>' +
+        '<div class="date-what"><span>' + esc(x.title) + '</span><small>' + esc(k.label) + '</small></div><div class="date-left">' + (isPast ? 'passou' : whenLabel(d)) + '</div>' +
+        '<button class="x" data-action="del-date" data-id="' + x.id + '" aria-label="Apagar ' + esc(x.title) + '">×</button></li>';
+    };
+    var list = '<div class="panel"><form class="dt-form" data-form="add-date"><div><label for="dt-title">Nome da data</label><input class="field" id="dt-title" required autocomplete="off" placeholder="Ex.: Entrega do relatório" value="' + esc(ui.dt.title) + '"></div>' +
+      '<div class="row2"><div><label for="dt-kind">Tipo</label><select class="field" id="dt-kind">' + kindOpts + '</select></div><div><label for="dt-date">Data</label><input class="field" type="date" id="dt-date" required value="' + esc(ui.dt.date) + '"></div></div>' +
+      '<button class="primary" type="submit">Adicionar data</button></form>' +
+      (up.length ? '<ul class="date-list">' + up.map(function (x) { return li(x, false); }).join('') + '</ul>' : '<p class="empty">Nenhuma data futura.</p>') +
+      (past.length ? '<p class="sub" style="margin:14px 0 8px">Já passaram</p><ul class="date-list">' + past.slice(0, 5).map(function (x) { return li(x, true); }).join('') + '</ul>' : '') + '</div>';
+    $('#datesWrap').innerHTML = cal + list;
+  }
+
+  function renderDone() {
+    var done = state.tasks.filter(function (t) { return t.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
+    $('#doneToggle').textContent = ui.showDone ? 'Esconder' : 'Mostrar (' + done.length + ')';
+    if (!ui.showDone) { $('#doneBox').innerHTML = ''; return; }
+    $('#doneBox').innerHTML = done.length ? '<ul class="done-list">' + done.slice(0, 20).map(function (t) {
+      return '<li class="done-item"><span class="t">' + esc(t.title) + '</span><button class="link" data-action="reopen" data-id="' + t.id + '">Reabrir</button><button class="x" data-action="del-task" data-id="' + t.id + '" aria-label="Apagar ' + esc(t.title) + '">×</button></li>';
+    }).join('') + '</ul>' : '<p class="empty">Nada concluído ainda. Tudo bem.</p>';
+  }
+
+  function renderFooter() {
+    $('#storeNote').textContent = storageOk ? 'Suas anotações ficam salvas só neste navegador.' : 'Este navegador bloqueou o salvamento automático. Use o backup para não perder nada.';
+    $('#clearEx').hidden = !(state.tasks.some(function (t) { return t.example; }) || state.dates.some(function (x) { return x.example; }));
+  }
+
+  function render() { renderHeader(); renderCountdown(); renderBoard(); renderDatas(); renderDone(); renderFooter(); }
+
+  /* ---------- Modo foco ---------- */
+  function pickNext() {
+    var open = state.tasks.filter(function (t) { return !t.done; }).sort(cmpTasks);
+    if (!open.length) return null;
+    var c = open.filter(function (t) { return focus.skipped.indexOf(t.id) < 0; });
+    if (!c.length) { focus.skipped = []; c = open; }
+    return c[0];
+  }
+  function startFocus() {
+    focus.scrollY = window.scrollY; focus.open = true; focus.mode = 'task'; focus.skipped = [];
+    var t = pickNext(); focus.id = t ? t.id : null; if (!t) focus.mode = 'empty';
+    renderFocus();
+  }
+  function exitFocus() {
+    clearInterval(focus.interval); focus.open = false; renderFocus(); render();
+    window.scrollTo(0, focus.scrollY);
+  }
+  var timerIdle = '<button class="ghost" data-action="timer-start">Começar 5 minutos</button>';
+
+  function renderFocus() {
+    var el = $('#focus'); clearInterval(focus.interval); focus.interval = null;
+    if (!focus.open) { el.hidden = true; $('#app').hidden = false; return; }
+    $('#app').hidden = true; el.hidden = false;
+    var back = '<button class="link" data-action="focus-exit" style="justify-self:start">← Voltar ao painel</button>';
+    var html;
+    if (focus.mode === 'empty') {
+      html = back + '<h2 data-focus-title tabindex="-1">Nada pendente.</h2><p class="lead sub">Respire. Quando surgir algo, anote no painel.</p>';
+    } else if (focus.mode === 'rest') {
+      var more = state.tasks.some(function (t) { return !t.done; });
+      html = back + '<p class="focus-label">Tarefa concluída</p><h2 data-focus-title tabindex="-1">Respire um momento.</h2>' +
+        '<p class="sub">Conquistas de hoje: ' + todayCount() + '. Sem pressa para a próxima.</p><div class="focus-actions">' +
+        (more ? '<button class="cta sm" data-action="focus-next">Mostrar a próxima tarefa</button>' : '') + '<button class="ghost" data-action="focus-exit">Voltar ao painel</button></div>';
+    } else {
+      var t = getTask(focus.id), c = catOf(t.cat), d = t.due ? daysUntil(t.due) : null;
+      var open = t.steps.filter(function (s) { return !s.done; }), total = t.steps.length, doneN = total - open.length;
+      var body;
+      if (open.length) {
+        body = '<div class="step-card"><p class="step-label">Seu próximo micro-passo · 5 minutos</p><p class="step-text">' + esc(open[0].text) + '</p>' +
+          '<div class="focus-actions"><button class="cta sm" data-action="focus-step-done" data-id="' + open[0].id + '">Fiz esse passo</button><div id="timerBox">' + timerIdle + '</div></div>' +
+          (total > 1 ? '<p class="step-progress">' + doneN + ' de ' + total + ' passos feitos</p>' : '') + '</div>';
+      } else if (total) {
+        body = '<div class="step-card"><p class="step-label">Todos os micro-passos estão feitos</p><p class="step-text">Quer concluir a tarefa ou dar mais um passo pequeno?</p>' +
+          '<div class="focus-actions"><button class="cta sm" data-action="focus-finish">Concluir a tarefa</button></div>' + stepForm('Mais um passo de 5 minutos…', 'Adicionar') + '</div>';
+      } else {
+        body = '<div class="step-card"><p class="step-label">Qual é o menor primeiro passo possível? (5 minutos)</p><p class="step-text">Pense pequeno. Abrir o arquivo já é começar.</p>' +
+          stepForm('Ex.: abrir o documento e escrever o título', 'Adicionar e começar') +
+          '<div class="suggest">' + SUGGEST.map(function (s) { return '<button class="chip-btn" data-action="focus-suggest" data-text="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div></div>';
+      }
+      var others = state.tasks.filter(function (x) { return !x.done && x.id !== t.id; }).length;
+      html = back + '<p class="focus-label">Só isto, por agora</p><div class="focus-meta"><span class="cat-chip" style="--cd:' + c.dot + '"><span class="dot"></span>' + esc(c.name) + '</span>' +
+        '<span class="due-chip' + (d !== null && d < 0 ? ' late' : '') + '">' + (d === null ? 'Sem prazo marcado' : 'Prazo: ' + whenLabel(d) + ' (' + fmtFull(t.due) + ')') + '</span>' + pillHtml(t, false) + '</div>' +
+        '<h2 data-focus-title tabindex="-1">' + esc(t.title) + '</h2>' + body + '<p class="mantra">O objetivo é fazer imperfeito, mas feito.</p>' +
+        '<div class="focus-foot"><button class="link" data-action="focus-finish">Já terminei a tarefa toda</button>' +
+        (others ? '<button class="link" data-action="focus-skip">Mostrar outra tarefa</button>' : '') + '</div>';
+    }
+    el.innerHTML = '<div class="focus-inner">' + html + '</div>';
+    el.scrollTop = 0;
+    var h = el.querySelector('[data-focus-title]'); if (h) h.focus({ preventScroll: true });
+  }
+  function stepForm(ph, btn) {
+    return '<form class="add" data-form="focus-step" style="margin-top:4px"><input type="text" id="fs-input" placeholder="' + ph + '" aria-label="Novo micro-passo" autocomplete="off">' +
+      '<button type="submit" style="width:auto;padding:0 16px;font-size:1rem">' + btn + '</button></form>';
+  }
+  function startTimer() {
+    clearInterval(focus.interval);
+    var box = $('#timerBox'); if (!box) return;
+    focus.end = Date.now() + 300000;
+    box.innerHTML = '<span class="timer-num" id="tnum">5:00</span><button class="ghost" data-action="timer-stop">Parar</button>';
+    focus.interval = setInterval(tick, 250);
+  }
+  function tick() {
+    var left = Math.max(0, Math.ceil((focus.end - Date.now()) / 1000)), n = $('#tnum');
+    if (n) n.textContent = Math.floor(left / 60) + ':' + pad(left % 60);
+    if (left <= 0) {
+      clearInterval(focus.interval); focus.interval = null;
+      var box = $('#timerBox'); if (box) box.innerHTML = '<p class="timer-done">Passaram 5 minutos. Parar agora já conta.</p><button class="ghost" data-action="timer-start">Mais 5 minutos</button>';
+    }
+  }
+  function stopTimer() { clearInterval(focus.interval); focus.interval = null; var b = $('#timerBox'); if (b) b.innerHTML = timerIdle; }
+
+  /* ---------- Janela de detalhes da tarefa ---------- */
+  function renderTaskDlg() {
+    var t = getTask(ui.dlgTask); if (!t) return;
+    var cats = CATS.map(function (c) { return '<option value="' + c.id + '"' + (t.cat === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+    var urg = URG_BY_RANK.map(function (k) { return '<label><input type="radio" name="td-urg" value="' + k + '"' + (t.urg === k ? ' checked' : '') + '>' + URG[k].emoji + ' ' + URG[k].label + '</label>'; }).join('');
+    $('#taskDlg').innerHTML = '<div class="dlg"><div class="dlg-head"><h2>Detalhes da tarefa</h2><button class="icon-btn" data-action="close-dlg" aria-label="Fechar">×</button></div>' +
+      '<div><label for="td-title">Tarefa</label><input class="field" id="td-title" value="' + esc(t.title) + '"></div>' +
+      '<div class="row2"><div><label for="td-cat">Categoria</label><select class="field" id="td-cat">' + cats + '</select></div>' +
+      '<div><label for="td-due">Prazo</label><input class="field" type="date" id="td-due" value="' + esc(t.due) + '"></div></div>' +
+      '<fieldset class="urg-set"><legend>Urgência</legend><div class="urg-row">' + urg + '</div></fieldset>' +
+      '<div><h3 style="font-size:1rem">Micro-passos de 5 minutos</h3><p class="mantra" style="margin-top:4px">O objetivo é fazer imperfeito, mas feito.</p></div>' +
+      '<ul class="steps" id="td-steps"></ul>' +
+      '<form class="step-add" data-form="dlg-step"><input class="field" id="td-newstep" placeholder="Ex.: abrir o documento e escrever o título" aria-label="Novo micro-passo" autocomplete="off"><button class="primary" type="submit">Adicionar</button></form>' +
+      '<div class="dlg-actions"><button class="danger" data-action="delete-task" data-id="' + t.id + '">Excluir tarefa</button><button class="primary" data-action="close-dlg">Pronto</button></div></div>';
+    renderSteps();
+  }
+  function renderSteps() {
+    var t = getTask(ui.dlgTask), ul = $('#td-steps'); if (!t || !ul) return;
+    ul.innerHTML = t.steps.length ? t.steps.map(function (s) {
+      return '<li class="step' + (s.done ? ' on' : '') + '"><button class="check' + (s.done ? ' on' : '') + '" data-action="toggle-step" data-id="' + s.id + '" aria-label="' + (s.done ? 'Desmarcar' : 'Marcar como feito') + ': ' + esc(s.text) + '"></button>' +
+        '<span>' + esc(s.text) + '</span><button class="x" data-action="del-step" data-id="' + s.id + '" aria-label="Apagar passo">×</button></li>';
+    }).join('') : '<li class="empty">Nenhum passo ainda. Comece com algo bem pequeno.</li>';
+  }
+  function openDlg(d) { try { d.showModal(); } catch (e) { d.setAttribute('open', ''); } }
+  function closeDlg(d) { try { d.close(); } catch (e) { d.removeAttribute('open'); } }
+
+  /* ---------- Backup ---------- */
+  function openBackup() {
+    ui.restoreArmed = false;
+    $('#backupDlg').innerHTML = '<div class="dlg"><div class="dlg-head"><h2>Backup e restaurar</h2><button class="icon-btn" data-action="close-dlg" aria-label="Fechar">×</button></div>' +
+      '<p class="sub">Copie este texto e guarde em um lugar seguro. Para restaurar, cole um backup aqui e clique em Restaurar.</p>' +
+      '<textarea class="field" id="bk-text" aria-label="Texto do backup" spellcheck="false"></textarea>' +
+      '<p class="sub" id="bk-msg" role="status"></p>' +
+      '<div class="dlg-actions"><button class="ghost" data-action="bk-copy">Copiar</button><button class="danger" data-action="bk-restore" id="bk-restore">Restaurar</button></div></div>';
+    $('#bk-text').value = JSON.stringify(state);
+    openDlg($('#backupDlg'));
+  }
+
+  /* ---------- Eventos ---------- */
+  document.addEventListener('click', function (e) {
+    if (e.target.tagName === 'DIALOG') { closeDlg(e.target); return; }
+    var b = e.target.closest('[data-action]'); if (!b) return;
+    var a = b.dataset.action, id = b.dataset.id, t;
+    switch (a) {
+      case 'start-focus': startFocus(); break;
+      case 'focus-exit': exitFocus(); break;
+      case 'focus-skip':
+        focus.skipped.push(focus.id);
+        t = pickNext(); if (t) { focus.id = t.id; } renderFocus(); break;
+      case 'focus-next':
+        focus.mode = 'task'; t = pickNext(); if (t) { focus.id = t.id; } else focus.mode = 'empty'; renderFocus(); break;
+      case 'focus-step-done':
+        if (setStep(focus.id, id, true)) { save(); renderHeader(); celebrate('step'); } renderFocus(); break;
+      case 'focus-finish':
+        if (setTaskDone(focus.id, true)) { save(); celebrate('task'); } focus.mode = 'rest'; renderFocus(); break;
+      case 'focus-suggest': { var inp = $('#fs-input'); if (inp) { inp.value = b.dataset.text; inp.focus(); } break; }
+      case 'timer-start': startTimer(); break;
+      case 'timer-stop': stopTimer(); break;
+      case 'goto-datas': $('#datas').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); break;
+      case 'filter': ui.filter = b.dataset.value; renderBoard(); break;
+      case 'expand': ui.expanded[id] = !ui.expanded[id]; renderBoard(); break;
+      case 'toggle-task':
+        t = getTask(id); if (t) { var done = !t.done; setTaskDone(id, done); commit(); if (done) celebrate('task'); } break;
+      case 'cycle-urg':
+        t = getTask(id); if (t) { t.urg = URG_BY_RANK[(baseRank(t) + 2) % 3]; commit(); } break;
+      case 'open-task': ui.dlgTask = id; ui.delArmed = null; renderTaskDlg(); openDlg($('#taskDlg')); break;
+      case 'close-dlg': closeDlg(b.closest('dialog')); break;
+      case 'toggle-step': {
+        t = getTask(ui.dlgTask); var s = t && t.steps.filter(function (x) { return x.id === id; })[0];
+        if (s) { var nd = !s.done; setStep(t.id, id, nd); save(); renderSteps(); render(); if (nd) celebrate('step'); } break;
+      }
+      case 'del-step':
+        t = getTask(ui.dlgTask); if (t) { t.steps = t.steps.filter(function (x) { return x.id !== id; }); state.events = state.events.filter(function (ev) { return ev.ref !== id; }); save(); renderSteps(); render(); } break;
+      case 'delete-task':
+        if (ui.delArmed === id) { state.tasks = state.tasks.filter(function (x) { return x.id !== id; }); state.events = state.events.filter(function (ev) { return ev.ref !== id; }); closeDlg($('#taskDlg')); commit(); }
+        else { ui.delArmed = id; b.textContent = 'Confirmar exclusão'; setTimeout(function () { if (ui.delArmed === id && b.isConnected) { b.textContent = 'Excluir tarefa'; ui.delArmed = null; } }, 3500); }
+        break;
+      case 'del-task': state.tasks = state.tasks.filter(function (x) { return x.id !== id; }); state.events = state.events.filter(function (ev) { return ev.ref !== id; }); commit(); break;
+      case 'reopen': setTaskDone(id, false); commit(); break;
+      case 'toggle-done': ui.showDone = !ui.showDone; renderDone(); break;
+      case 'del-date': state.dates = state.dates.filter(function (x) { return x.id !== id; }); commit(); break;
+      case 'cal-prev': ui.cal.m--; if (ui.cal.m < 0) { ui.cal.m = 11; ui.cal.y--; } renderDatas(); break;
+      case 'cal-next': ui.cal.m++; if (ui.cal.m > 11) { ui.cal.m = 0; ui.cal.y++; } renderDatas(); break;
+      case 'cal-pick': ui.dt.date = b.dataset.date; renderDatas(); var ti = $('#dt-title'); if (ti) ti.focus(); break;
+      case 'open-backup': openBackup(); break;
+      case 'bk-copy': {
+        var ta = $('#bk-text'), msg = $('#bk-msg'); ta.select();
+        var ok = function () { msg.textContent = 'Copiado.'; }, fail = function () { msg.textContent = 'Não consegui copiar sozinho. O texto está selecionado: use Ctrl+C.'; };
+        try { navigator.clipboard.writeText(ta.value).then(ok, fail); } catch (err) { fail(); }
+        break;
+      }
+      case 'bk-restore': {
+        var text = $('#bk-text').value, m = $('#bk-msg'), obj;
+        try { obj = JSON.parse(text); } catch (err) { m.textContent = 'Esse texto não parece um backup válido.'; break; }
+        if (!obj || !Array.isArray(obj.tasks)) { m.textContent = 'Esse texto não parece um backup válido.'; break; }
+        if (!ui.restoreArmed) { ui.restoreArmed = true; b.textContent = 'Confirmar: substituir tudo'; m.textContent = 'Isso troca tudo o que está no painel agora.'; break; }
+        state = { v: 1, tasks: obj.tasks, dates: Array.isArray(obj.dates) ? obj.dates : [], events: Array.isArray(obj.events) ? obj.events : [] };
+        state.tasks.forEach(function (x) { x.steps = Array.isArray(x.steps) ? x.steps : []; x.created = x.created || Date.now(); });
+        closeDlg($('#backupDlg')); commit(); toast('Backup restaurado.'); break;
+      }
+      case 'clear-examples':
+        state.tasks = state.tasks.filter(function (x) { return !x.example; }); state.dates = state.dates.filter(function (x) { return !x.example; }); commit(); toast('Exemplos removidos.'); break;
+    }
+  });
+
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('[data-form]'); if (!f) return;
+    e.preventDefault();
+    var kind = f.dataset.form;
+    if (kind === 'add-task') {
+      var cat = f.dataset.cat, inp = $('#add-' + cat), title = inp.value.trim(); if (!title) return;
+      state.tasks.push({ id: uid(), title: title, cat: cat, urg: $('#addu-' + cat).value, due: '', steps: [], done: false, created: Date.now() });
+      commit(); var again = $('#add-' + cat); if (again) again.focus();
+    } else if (kind === 'add-date') {
+      var title2 = $('#dt-title').value.trim(), date = $('#dt-date').value; if (!title2 || !date) return;
+      state.dates.push({ id: uid(), title: title2, kind: $('#dt-kind').value, date: date });
+      var d = parseISO(date); ui.cal.y = d.getFullYear(); ui.cal.m = d.getMonth();
+      ui.dt.title = ''; ui.dt.date = ''; commit(); toast('Data adicionada.');
+    } else if (kind === 'dlg-step') {
+      var t = getTask(ui.dlgTask), v = $('#td-newstep').value.trim(); if (!t || !v) return;
+      t.steps.push({ id: uid(), text: v, done: false }); save(); renderSteps(); render();
+      $('#td-newstep').value = ''; $('#td-newstep').focus();
+    } else if (kind === 'focus-step') {
+      var ft = getTask(focus.id), fv = $('#fs-input').value.trim(); if (!ft || !fv) return;
+      ft.steps.push({ id: uid(), text: fv, done: false }); save(); renderFocus();
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'dt-title') ui.dt.title = e.target.value;
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'dt-kind') { ui.dt.kind = t.value; return; }
+    if (t.id === 'dt-date') { ui.dt.date = t.value; return; }
+    var task = ui.dlgTask && getTask(ui.dlgTask); if (!task) return;
+    if (t.id === 'td-title') { var v = t.value.trim(); if (v) task.title = v; else t.value = task.title; }
+    else if (t.id === 'td-cat') task.cat = t.value;
+    else if (t.id === 'td-due') task.due = t.value;
+    else if (t.name === 'td-urg') task.urg = t.value;
+    else return;
+    commit();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && focus.open && !document.querySelector('dialog[open]')) exitFocus();
+  });
+  $('#taskDlg').addEventListener('close', function () { ui.dlgTask = null; ui.delArmed = null; });
+
+  /* ---------- Início ---------- */
+  render();
+})();
+</script>
+</body>
+</html>
